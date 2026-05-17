@@ -72,11 +72,17 @@ if __name__ == "__main__":
     p.add_argument("--host", default="127.0.0.1", help="UDP bind address")
     p.add_argument("--port", type=int, default=None, help="UDP port")
     p.add_argument("--debug", action="store_true", help="Verbose per-packet logs")
+    p.add_argument("--gui", action="store_true",
+                   help="Opt in to the experimental CustomTkinter desktop GUI. "
+                        "Default is headless (console logs) — the GUI is still "
+                        "rough around window-resize performance.")
     p.add_argument("--headless", action="store_true",
-                   help="Disable the GUI, use console logs only")
+                   help="Explicitly request headless mode (this is the default).")
     p.add_argument("--profile", default=None,
                    help="Load this named tuning profile at startup (created if missing)")
     # --no-tui kept as a hidden alias so existing Steam Launch Options keep working.
+    # Since headless is now the default, --no-tui is effectively a no-op but
+    # logs a one-line deprecation hint.
     p.add_argument("--no-tui", dest="no_tui", action="store_true", help=argparse.SUPPRESS)
     args = p.parse_args()
 
@@ -91,18 +97,15 @@ if __name__ == "__main__":
 
     sys.excepthook = _excepthook
 
-    want_headless = args.headless or args.no_tui
-    if args.no_tui and not args.headless:
-        sys.stderr.write("[fhds] --no-tui is deprecated; use --headless.\n")
+    if args.no_tui:
+        sys.stderr.write("[fhds] --no-tui is a no-op (headless is the default). "
+                         "Pass --gui to launch the experimental window.\n")
 
-    if want_headless:
-        setup_logging(args.debug)
-        log_latest_commit_age()
-        run(settings)
-    else:
-        if not run_gui(settings, args.debug):
-            # GUI couldn't load; run headless instead so the user still gets
-            # working triggers.
-            setup_logging(args.debug)
-            log_latest_commit_age()
-            run(settings)
+    if args.gui:
+        if run_gui(settings, args.debug):
+            sys.exit(0)
+        # GUI couldn't load — fall through to headless so the user still
+        # gets working triggers. `run_gui` already printed the install hint.
+    setup_logging(args.debug)
+    log_latest_commit_age()
+    run(settings)

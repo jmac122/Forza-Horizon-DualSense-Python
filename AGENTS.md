@@ -196,7 +196,9 @@ uv run main.py    # runs the service
 | `--host` | UDP bind address (default `127.0.0.1`) |
 | `--port` | UDP port (default `5300`) |
 | `--debug` | Enable per‑packet DEBUG logs |
-| `--headless` | Skip the GUI, console logs only (replaces `--no-tui`; old flag still works) |
+| `--gui` | **Opt in** to the experimental CustomTkinter window. Default is headless (no flag). |
+| `--headless` | Explicit headless mode — same as no flag. Symmetry only. |
+| `--profile NAME` | Load this named tuning profile at startup (created if missing). Works in both modes. |
 
 ### In‑game setup (must do once)
 Forza Horizon → **Settings → HUD and Gameplay → Data Out: ON**, IP `127.0.0.1`,
