@@ -45,9 +45,26 @@ def run(s: Settings) -> None:
         ds.close()
 
 
-def run_tui(s: Settings) -> None:
-    from modules.tui import TriggerTUI
-    TriggerTUI(s).run()
+def run_gui(s: Settings, debug: bool) -> bool:
+    """Launch the CustomTkinter GUI. Returns False if the GUI stack can't be
+    loaded (e.g. `tkinter` missing on a minimal Linux install) so the caller
+    can fall back to headless mode."""
+    try:
+        from modules.gui import TriggerGUI  # noqa: PLC0415 — import after Tk check
+    except ImportError as exc:
+        # Most common cause on Linux: python3-tk not installed. Print a clear
+        # install hint to stderr before falling through.
+        sys.stderr.write(
+            "\n[fhds] GUI dependencies are missing: "
+            f"{exc.name or exc}.\n"
+            "[fhds] On Debian/Ubuntu:  sudo apt install python3-tk\n"
+            "[fhds] On Fedora:         sudo dnf install python3-tkinter\n"
+            "[fhds] On Arch:           sudo pacman -S tk\n"
+            "[fhds] Falling back to headless mode.\n\n"
+        )
+        return False
+    TriggerGUI(s).run()
+    return True
 
 
 # MARK: Entry point
@@ -56,7 +73,10 @@ if __name__ == "__main__":
     p.add_argument("--host", default="127.0.0.1", help="UDP bind address")
     p.add_argument("--port", type=int, default=None, help="UDP port")
     p.add_argument("--debug", action="store_true", help="Verbose per-packet logs")
-    p.add_argument("--no-tui", action="store_true", help="Disable TUI, use console logs")
+    p.add_argument("--headless", action="store_true",
+                   help="Disable the GUI, use console logs only")
+    # --no-tui kept as a hidden alias so existing Steam Launch Options keep working.
+    p.add_argument("--no-tui", dest="no_tui", action="store_true", help=argparse.SUPPRESS)
     args = p.parse_args()
 
     settings = Settings()
@@ -66,9 +86,18 @@ if __name__ == "__main__":
 
     sys.excepthook = _excepthook
 
-    if args.no_tui:
+    want_headless = args.headless or args.no_tui
+    if args.no_tui and not args.headless:
+        sys.stderr.write("[fhds] --no-tui is deprecated; use --headless.\n")
+
+    if want_headless:
         setup_logging(args.debug)
         log_latest_commit_age()
         run(settings)
     else:
-        run_tui(settings)
+        if not run_gui(settings, args.debug):
+            # GUI couldn't load; run headless instead so the user still gets
+            # working triggers.
+            setup_logging(args.debug)
+            log_latest_commit_age()
+            run(settings)
