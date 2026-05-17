@@ -5,8 +5,7 @@ import traceback
 from datetime import datetime
 from pathlib import Path
 
-from modules import dualsense, udplistener, setup_logging, loop
-from modules import preferences
+from modules import dualsense, udplistener, setup_logging, loop, profiles
 from modules.settings import Settings
 from modules.update_check import log_latest_commit_age
 
@@ -75,12 +74,18 @@ if __name__ == "__main__":
     p.add_argument("--debug", action="store_true", help="Verbose per-packet logs")
     p.add_argument("--headless", action="store_true",
                    help="Disable the GUI, use console logs only")
+    p.add_argument("--profile", default=None,
+                   help="Load this named tuning profile at startup (created if missing)")
     # --no-tui kept as a hidden alias so existing Steam Launch Options keep working.
     p.add_argument("--no-tui", dest="no_tui", action="store_true", help=argparse.SUPPRESS)
     args = p.parse_args()
 
     settings = Settings()
-    preferences.load(settings)
+    try:
+        profiles.load_or_migrate(settings, requested=args.profile)
+    except profiles.InvalidProfileName as e:
+        sys.stderr.write(f"[fhds] Invalid --profile value: {e}\n")
+        sys.exit(2)
     if args.host is not None: settings.udp_host = args.host
     if args.port is not None: settings.udp_port = args.port
 

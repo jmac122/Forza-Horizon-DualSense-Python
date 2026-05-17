@@ -150,6 +150,10 @@ cmd /c "start /MIN /D C:\Your\Path\To\Forza-Horizon-DualSense-Python\src uv run 
 
 Every effect (brake force, ABS buzz, gear thump, rev limiter, etc.) can be tweaked or turned off from the **Settings tab in the app** — no file editing needed. Changes take effect on the next frame; no restart needed. Hover any label (or click the `?` icon next to it) for a plain-English explanation of what each setting does and what increasing, decreasing, or turning it off feels like.
 
+### 💾 Profiles
+
+The top bar has a profile picker. Use **Save As…** to create a named preset (e.g. *Stock*, *Stiff Brake*, *Sport*), switch between presets with the dropdown, and **Save** to overwrite the current one. The active profile is remembered between launches; you can also load a specific one from the command line with `--profile "Sport"`. Profile files live in `app/src/profiles/` — one JSON per profile, easy to back up or share with a friend.
+
 > ⚠️ The rev limiter fires based on `rpm / max_rpm`, not a fixed RPM. Different cars hit redline at different ratios, so it may need per-car tweaking.
 
 ---
